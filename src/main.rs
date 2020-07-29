@@ -1,41 +1,34 @@
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
+
+mod db;
+
 use std::error::Error;
 use std::fs::File;
 use std::process;
+use std::env;
 
-use dotenv;
-use serde::Deserialize;
+use dotenv::dotenv;
 
-// type Record = (u64, String, String, Option<f64>, f64, String, Option<String>, Option<u64>, Option<u64>, Option<u64>, Option<u64>);
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Song {
-    id: u64,
-    title: String,
-    artist: String,
-    min_bpm: Option<f64>,
-    max_bpm: f64,
-    category: String,
-    dlc: Option<String>,
-    #[serde(rename = "4b0")]
-    four_button_0: Option<u64>,
-    #[serde(rename = "4b1")]
-    four_button_1: Option<u64>,
-    #[serde(rename = "4b2")]
-    four_button_2: Option<u64>,
-    #[serde(rename = "4b3")]
-    four_button_3: Option<u64>,
-}
+use crate::db::{establish_connection, models::Song};
 
 fn run() -> Result<(), Box<dyn Error>> {
-    dotenv::dotenv().ok();
-
-    let key = "CSV_FILE_NAME";
-    let file_path = dotenv::var(key)?;
+    dotenv().ok();
+    let file_path = env::var("CSV_FILE_NAME").expect("CSV_FILE_NAME must be set");
     let file = File::open(file_path)?;
     let mut rdr = csv::Reader::from_reader(file);
+
+    let conn = establish_connection();
+
     for result in rdr.deserialize() {
         let song: Song = result?;
-        println!("{:?}", song);
+        Song::create_or_update(&song, &conn);
+    }
+
+    for result in Song::by_4b_level(14, &conn) {
+        println!("{:?}", result);
     }
     Ok(())
 }

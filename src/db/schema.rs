@@ -1,0 +1,27 @@
+table! {
+    songs (id) {
+        id -> Integer,
+        title -> Text,
+        artist -> Text,
+        min_bpm -> Nullable<Float8>,
+        max_bpm -> Float8,
+        category -> Text,
+        dlc -> Nullable<Text>,
+        four_button_0 -> Integer,
+        four_button_1 -> Nullable<Integer>,
+        four_button_2 -> Nullable<Integer>,
+        four_button_3 -> Nullable<Integer>,
+        five_button_0 -> Integer,
+        five_button_1 -> Nullable<Integer>,
+        five_button_2 -> Nullable<Integer>,
+        five_button_3 -> Nullable<Integer>,
+        six_button_0 -> Integer,
+        six_button_1 -> Nullable<Integer>,
+        six_button_2 -> Nullable<Integer>,
+        six_button_3 -> Nullable<Integer>,
+        eight_button_0 -> Integer,
+        eight_button_1 -> Nullable<Integer>,
+        eight_button_2 -> Nullable<Integer>,
+        eight_button_3 -> Nullable<Integer>,
+    }
+}
