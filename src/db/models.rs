@@ -1,8 +1,8 @@
-use serde::Deserialize;
 use diesel::prelude::*;
+use serde::Deserialize;
 
-use super::schema::songs;
-use super::schema::songs::dsl::songs as song_dsl;
+use crate::db::schema::songs;
+use crate::db::schema::songs::dsl::songs as song_dsl;
 
 #[derive(Debug, Deserialize, Queryable, Insertable, AsChangeset)]
 #[serde(rename_all(deserialize = "camelCase"))]
@@ -53,76 +53,128 @@ impl Song {
     pub fn by_id(id: i32, conn: &SqliteConnection) -> Option<Self> {
         if let Ok(record) = song_dsl.find(id).get_result::<Song>(conn) {
             Some(record)
-        } else { None }
+        } else {
+            None
+        }
     }
 
-    pub fn by_title(title_str: &str, conn: &SqliteConnection) -> Vec<Self> {
+    pub fn by_title(title_str: &str, conn: &SqliteConnection) -> Option<Self> {
         use super::schema::songs::dsl::title;
 
-        song_dsl
-            .filter(title.like(title_str))
-            .load::<Song>(conn)
-            .expect("Error loading songs")
+        if title_str == "" {
+            None
+        } else {
+            song_dsl
+                .filter(title.like(format!("%{}%", title_str)))
+                .first(conn)
+                .optional()
+                .expect("Error loading songs")
+        }
     }
 
-    pub fn by_4b_level(level: i32, conn: &SqliteConnection) -> Vec<Self> {
-        use super::schema::songs::dsl::{four_button_0, four_button_1, four_button_2, four_button_3};
+    pub fn by_level(
+        button: i32,
+        level: i32,
+        offset: i64,
+        conn: &SqliteConnection,
+    ) -> (i64, Vec<Self>) {
+        use super::schema::songs::dsl::{
+            eight_button_0, eight_button_1, eight_button_2, eight_button_3, five_button_0,
+            five_button_1, five_button_2, five_button_3, four_button_0, four_button_1,
+            four_button_2, four_button_3, six_button_0, six_button_1, six_button_2, six_button_3,
+        };
 
-        song_dsl
-            .filter(four_button_0.eq(level))
-            .or_filter(four_button_1.eq(level))
-            .or_filter(four_button_2.eq(level))
-            .or_filter(four_button_3.eq(level))
-            .load::<Song>(conn)
-            .expect("Error loading songs")
-    }
-
-    pub fn by_5b_level(level: i32, conn: &SqliteConnection) -> Vec<Self> {
-        use super::schema::songs::dsl::{five_button_0, five_button_1, five_button_2, five_button_3};
-
-        song_dsl
-            .filter(five_button_0.eq(level))
-            .or_filter(five_button_1.eq(level))
-            .or_filter(five_button_2.eq(level))
-            .or_filter(five_button_3.eq(level))
-            .load::<Song>(conn)
-            .expect("Error loading songs")
-    }
-
-    pub fn by_6b_level(level: i32, conn: &SqliteConnection) -> Vec<Self> {
-        use super::schema::songs::dsl::{six_button_0, six_button_1, six_button_2, six_button_3};
-
-        song_dsl
-            .filter(six_button_0.eq(level))
-            .or_filter(six_button_1.eq(level))
-            .or_filter(six_button_2.eq(level))
-            .or_filter(six_button_3.eq(level))
-            .load::<Song>(conn)
-            .expect("Error loading songs")
-    }
-
-    pub fn by_8b_level(level: i32, conn: &SqliteConnection) -> Vec<Self> {
-        use super::schema::songs::dsl::{eight_button_0, eight_button_1, eight_button_2, eight_button_3};
-
-        song_dsl
-            .filter(eight_button_0.eq(level))
-            .or_filter(eight_button_1.eq(level))
-            .or_filter(eight_button_2.eq(level))
-            .or_filter(eight_button_3.eq(level))
-            .load::<Song>(conn)
-            .expect("Error loading songs")
+        match button {
+            4 => (
+                song_dsl
+                    .filter(four_button_0.eq(level))
+                    .or_filter(four_button_1.eq(level))
+                    .or_filter(four_button_2.eq(level))
+                    .or_filter(four_button_3.eq(level))
+                    .count()
+                    .get_result(conn)
+                    .expect("Error loading songs"),
+                song_dsl
+                    .filter(four_button_0.eq(level))
+                    .or_filter(four_button_1.eq(level))
+                    .or_filter(four_button_2.eq(level))
+                    .or_filter(four_button_3.eq(level))
+                    .limit(25)
+                    .offset(offset)
+                    .load::<Song>(conn)
+                    .expect("Error loading songs"),
+            ),
+            5 => (
+                song_dsl
+                    .filter(five_button_0.eq(level))
+                    .or_filter(five_button_1.eq(level))
+                    .or_filter(five_button_2.eq(level))
+                    .or_filter(five_button_3.eq(level))
+                    .count()
+                    .get_result(conn)
+                    .expect("Error loading songs"),
+                song_dsl
+                    .filter(five_button_0.eq(level))
+                    .or_filter(five_button_1.eq(level))
+                    .or_filter(five_button_2.eq(level))
+                    .or_filter(five_button_3.eq(level))
+                    .limit(25)
+                    .offset(offset)
+                    .load::<Song>(conn)
+                    .expect("Error loading songs"),
+            ),
+            6 => (
+                song_dsl
+                    .filter(six_button_0.eq(level))
+                    .or_filter(six_button_1.eq(level))
+                    .or_filter(six_button_2.eq(level))
+                    .or_filter(six_button_3.eq(level))
+                    .count()
+                    .get_result(conn)
+                    .expect("Error loading songs"),
+                song_dsl
+                    .filter(six_button_0.eq(level))
+                    .or_filter(six_button_1.eq(level))
+                    .or_filter(six_button_2.eq(level))
+                    .or_filter(six_button_3.eq(level))
+                    .limit(25)
+                    .offset(offset)
+                    .load::<Song>(conn)
+                    .expect("Error loading songs"),
+            ),
+            8 => (
+                song_dsl
+                    .filter(eight_button_0.eq(level))
+                    .or_filter(eight_button_1.eq(level))
+                    .or_filter(eight_button_2.eq(level))
+                    .or_filter(eight_button_3.eq(level))
+                    .count()
+                    .get_result(conn)
+                    .expect("Error loading songs"),
+                song_dsl
+                    .filter(eight_button_0.eq(level))
+                    .or_filter(eight_button_1.eq(level))
+                    .or_filter(eight_button_2.eq(level))
+                    .or_filter(eight_button_3.eq(level))
+                    .limit(25)
+                    .offset(offset)
+                    .load::<Song>(conn)
+                    .expect("Error loading songs"),
+            ),
+            _ => (0, vec![]),
+        }
     }
 
     pub fn create_or_update(song: &Song, conn: &SqliteConnection) -> Option<Self> {
-        if let Some(x) = Self::by_id(song.id, conn) {
-            let target = song_dsl.find(song.id);
-            diesel::update(target)
-                .set(song)
+        if let None = Self::by_id(song.id, conn) {
+            diesel::insert_into(song_dsl)
+                .values(song)
                 .execute(conn)
                 .expect("Error saving new song");
         } else {
-            diesel::insert_into(song_dsl)
-                .values(song)
+            let target = song_dsl.find(song.id);
+            diesel::update(target)
+                .set(song)
                 .execute(conn)
                 .expect("Error saving new song");
         }
